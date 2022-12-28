@@ -364,14 +364,19 @@ static void * USBD_MSC_FREE(void * p)
 	/* Open EP IN */
 	(void)USBD_LL_OpenEP(pdev, COM_CDC_IN_EP, USBD_EP_TYPE_BULK, COM_CDC_DATA_MAX_PACK_SIZE);
 	pdev->ep_in[COM_CDC_IN_EP & 0x0FU].is_used = 1U;
+	pdev->ep_in[COM_CDC_IN_EP & 0x0FU].maxpacket = COM_CDC_DATA_MAX_PACK_SIZE;
+
 	/* Open EP OUT */
 	(void)USBD_LL_OpenEP(pdev, COM_CDC_OUT_EP, USBD_EP_TYPE_BULK, COM_CDC_DATA_MAX_PACK_SIZE);
 	pdev->ep_out[COM_CDC_OUT_EP & 0x0FU].is_used = 1U;
+	pdev->ep_out[COM_CDC_OUT_EP & 0x0FU].maxpacket = COM_CDC_DATA_MAX_PACK_SIZE;
+
 	/* 为CDC CMD端点设置bInterval */
-	pdev->ep_in[COM_CDC_CMD_EP & 0xFU].bInterval = COM_CDC_FS_BINTERVAL;
+	pdev->ep_in[COM_CDC_CMD_EP & 0x0FU].bInterval = COM_CDC_FS_BINTERVAL;
 	/* Open Command IN EP */
 	(void)USBD_LL_OpenEP(pdev, COM_CDC_CMD_EP, USBD_EP_TYPE_INTR, COM_CDC_CMD_PACK_SIZE);
 	pdev->ep_in[COM_CDC_CMD_EP & 0x0FU].is_used = 1U;
+	pdev->ep_in[COM_CDC_CMD_EP & 0x0FU].maxpacket = COM_CDC_CMD_PACK_SIZE;
 
 	hcdc->RxBuffer = NULL;
 
@@ -403,9 +408,12 @@ static void * USBD_MSC_FREE(void * p)
 	/* Open EP IN*/
 	(void)USBD_LL_OpenEP(pdev, COM_MSC_IN_EP, USBD_EP_TYPE_BULK, COM_MSC_DATA_MAX_PACK_SIZE);
 	pdev->ep_in[COM_MSC_IN_EP & 0x0FU].is_used = 1U;
+	pdev->ep_in[COM_MSC_IN_EP & 0x0FU].maxpacket = COM_MSC_DATA_MAX_PACK_SIZE;
+
 	/* Open EP OUT */
 	(void)USBD_LL_OpenEP(pdev, COM_MSC_OUT_EP, USBD_EP_TYPE_BULK, COM_MSC_DATA_MAX_PACK_SIZE);
 	pdev->ep_out[COM_MSC_OUT_EP & 0x0FU].is_used = 1U;
+	pdev->ep_out[COM_MSC_OUT_EP & 0x0FU].maxpacket = COM_MSC_DATA_MAX_PACK_SIZE;
 
 	/* 初始化BOT层 */
 	MSC_BOT_Init(pdev);
@@ -1019,7 +1027,7 @@ uint8_t USBD_CDC_ReceivePacket(USBD_HandleTypeDef *pdev)
 	USBD_CDC_HandleTypeDef *hcdc = USBD_CDC_MALLOC();
 	
 	pdev->pUserData[pdev->classId] = &USBD_CDC_Interface_fops_FS;
-	pdev->pClassData = (void *)hcdc;
+	pdev->pClassDataCmsit[pdev->classId] = (void *)hcdc;
 	/* Malloc检查 */
 	if(pdev->pClassDataCmsit[pdev->classId] == NULL)
 		return (uint8_t)USBD_FAIL;

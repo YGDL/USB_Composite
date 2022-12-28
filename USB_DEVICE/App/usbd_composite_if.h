@@ -25,10 +25,21 @@
 #endif
 
 #include "usbd_composite.h"
+#include "stdbool.h"
 
 /* 定义CDC上接收和传输缓冲区的大小 */
-#define APP_RX_DATA_SIZE  2048
-#define APP_TX_DATA_SIZE  2048
+#define APP_RX_DATA_SIZE	0x800
+#define APP_TX_DATA_SIZE	0x800
+#define Recive_Finish		true
+#define Recive_UnFinish		false
+#define New_Package			true
+#define Old_Package			false
+
+extern bool Recive_State;	/**< 接收状态 */
+extern bool Tag;			/**< 下一个包状态 */
+extern uint16_t Length;		/**< 包长 */
+extern uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
+extern uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* 操作接口句柄 */
 extern USBD_CDC_ItfTypeDef USBD_CDC_Interface_fops_FS;
@@ -37,6 +48,7 @@ extern USBD_StorageTypeDef USBD_MSC_Interface_fops_FS;
 /* 外部函数 */
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 uint8_t usb_printf(const char *format, ...);
+uint8_t usb_scanf(const char *format, ...);
 
 #ifdef __cplusplus
 }

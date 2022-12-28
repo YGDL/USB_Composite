@@ -22,6 +22,10 @@
 #include "stdarg.h"
 #include "stm32h7xx.h"
 #include "sdmmc.h"
+#include "tim.h"
+#include "main.h"
+#include "cmsis_os.h"
+#include "freertos.h"
 
 /* Typedef -------------------------------------------------------------------*/
 
@@ -95,6 +99,11 @@ USBD_CDC_LineCodingTypeDef linecoding =
 	0x08    /* nb. of bits 8*/
 };
 
+bool Recive_State = Recive_UnFinish;	/**< 接收状态 */
+bool Tag = New_Package;					/**< 下一个包状态 */
+uint16_t Length = 0U;					/**< 包长 */
+static uint8_t Buffer[COM_CDC_DATA_MAX_PACK_SIZE];	/**< 接收单包使用的缓存 */
+
 /* 为接收和传输创建缓冲区，这取决于用户重新定义和/或删除这些定义 */
 /* 通过USB接收的数据被存储在这个缓冲区中 */
 uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
@@ -104,6 +113,7 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
+extern osMessageQueueId_t USB_CDC_Reciver_ParameterHandle;
 
 /**
   * @brief  通过FS USB IP初始化CDC介质低层
@@ -114,7 +124,7 @@ static int8_t CDC_Init_FS(void)
 {
 	/* 设置应用程序缓冲区 */
 	USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
-	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
+	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, Buffer);
 	return (USBD_OK);
 }
 
@@ -224,9 +234,39 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
-	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+	if(Old_Package == Tag)
+	{
+		//Stop Time
+		__HAL_TIM_DISABLE_IT(&htim6, TIM_IT_UPDATE);
+		__HAL_TIM_DISABLE(&htim6);
+	}		
+	memcpy(UserRxBufferFS + Length, Buffer, *Len);
+	Length += *Len;
+	if(COM_CDC_DATA_MAX_PACK_SIZE == *Len)
+	{
+		if(Old_Package != Tag)
+			/* 新包 */
+			Length = COM_CDC_DATA_MAX_PACK_SIZE;
+		Tag = Old_Package;
+		Recive_State = Recive_UnFinish;
+	}
+	else
+	{
+		if(Old_Package != Tag)
+			/* 新包 */
+			Length = *Len;
+		Tag = New_Package;
+		Recive_State = Recive_Finish;
+	}
+	if(Old_Package == Tag)
+	{
+		//Start Time
+		__HAL_TIM_ENABLE_IT(&htim6, TIM_IT_UPDATE);
+		__HAL_TIM_ENABLE(&htim6);
+	}
+	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, Buffer);
 	USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-	CDC_Transmit_FS(UserRxBufferFS, *Len);
+	
 	return (USBD_OK);
 }
 
@@ -306,6 +346,28 @@ uint8_t usb_printf(const char *format, ...)
 	result = CDC_Transmit_FS(UserTxBufferFS, length);
 
 	return (uint8_t)result;
+}
+
+/**
+  * @brief  usb打印函数
+  * @param  format: 字符串指针，可带不定长度变量
+  * @return 操作状态
+  * @retval USBD_OK，如果所有操作都是OK，否则USBD_FAIL
+  */
+uint8_t usb_scanf(const char *format, ...)
+{
+    va_list args;
+    uint8_t result;
+
+    va_start(args, format);
+	while((Recive_Finish != Recive_State) || (New_Package != Tag))
+		osDelay(10);
+    result = vsscanf((char *)UserRxBufferFS, format, args);
+	Recive_State = Recive_UnFinish;
+	Length = 0U;
+    va_end(args);
+
+    return result;
 }
 
 /* ------------------------------------- MSC -------------------------------------------- */

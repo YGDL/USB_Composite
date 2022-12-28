@@ -28,6 +28,8 @@
 #include "stm32h7xx.h"
 #include "stdbool.h"
 #include "sdmmc.h"
+#include "usbd_composite_if.h"
+#include "tim.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -84,6 +86,11 @@ const osThreadAttr_t SDCrad_Task_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for USB_CDC_Reciver_Parameter */
+osMessageQueueId_t USB_CDC_Reciver_ParameterHandle;
+const osMessageQueueAttr_t USB_CDC_Reciver_Parameter_attributes = {
+  .name = "USB_CDC_Reciver_Parameter"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -120,6 +127,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* creation of USB_CDC_Reciver_Parameter */
+  USB_CDC_Reciver_ParameterHandle = osMessageQueueNew (1, sizeof(uint16_t), &USB_CDC_Reciver_Parameter_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -262,13 +273,22 @@ void StartTask04(void *argument)
 void StartTask05(void *argument)
 {
   /* USER CODE BEGIN StartTask05 */
+  char c;
+  float i;
 //  HAL_SD_CardInfoTypeDef info;
 //  if(HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
 //    HAL_SD_GetCardInfo(&hsd1, &info);
   /* Infinite loop */
   for(;;)
   {
-
+    usb_scanf("$GPGSV,3,1,10,04,55,226,28,07,21,318,42,08,80,217,18,09,43,285,43,0*6D%f", &i);
+    usb_printf("$GPGSV,3,1,10,04,55,226,28,07,21,318,42,08,80,217,18,09,43,285,43,0*6D%f", i);
+    if((Recive_Finish == Recive_State) && (New_Package == Tag))
+    {
+      CDC_Transmit_FS(UserRxBufferFS, Length);
+      Recive_State = Recive_UnFinish;
+      Length = 0U;
+    }
     osDelay(1);
   }
   /* USER CODE END StartTask05 */

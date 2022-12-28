@@ -106,7 +106,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
     HAL_NVIC_EnableIRQ(OTG_FS_EP1_OUT_IRQn);
     HAL_NVIC_SetPriority(OTG_FS_EP1_IN_IRQn, 3, 0);
     HAL_NVIC_EnableIRQ(OTG_FS_EP1_IN_IRQn);
-    HAL_NVIC_SetPriority(OTG_FS_IRQn, 3, 0);
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, 4, 0);
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
   /* USER CODE BEGIN USB_OTG_FS_MspInit 1 */
 
