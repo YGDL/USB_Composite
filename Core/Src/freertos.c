@@ -283,12 +283,12 @@ void StartTask05(void *argument)
   {
     usb_scanf("$GPGSV,3,1,10,04,55,226,28,07,21,318,42,08,80,217,18,09,43,285,43,0*6D%f", &i);
     usb_printf("$GPGSV,3,1,10,04,55,226,28,07,21,318,42,08,80,217,18,09,43,285,43,0*6D%f", i);
-    if((Recive_Finish == Recive_State) && (New_Package == Tag))
-    {
-      CDC_Transmit_FS(UserRxBufferFS, Length);
-      Recive_State = Recive_UnFinish;
-      Length = 0U;
-    }
+    // if((Recive_Finish == Recive_State) && (New_Package == Tag))
+    // {
+    //   CDC_Transmit_FS(UserRxBufferFS, Length);
+    //   Recive_State = Recive_UnFinish;
+    //   Length = 0U;
+    // }
     osDelay(1);
   }
   /* USER CODE END StartTask05 */
