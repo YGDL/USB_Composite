@@ -5,3 +5,5 @@
 	下载STM32CubeMX软件用于配置各个外设，手动配置也可以。配置的参数如下，保持默认即可。  
 
 	![ ](https://github.com/YGDL/USB_Composite/raw/main/Photo/STM32VubeMX.png)
+
+	![Simple Hello world label example in LVGL](https://github.com/kisvegabor/test/raw/master/readme_example_1.png)
